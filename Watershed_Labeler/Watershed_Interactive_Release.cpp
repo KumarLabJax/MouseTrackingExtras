@@ -251,6 +251,48 @@ void seekNewFrame(int &currentFrame, bool randomizedEnabled, int minFrameNum, in
 	markers.setTo(0);
 }
 
+void writeEllfitData(string file, int direction, int currentFrame, Mat segmented, int framenum)
+{
+	ofstream ellipseFile;
+	string outFName;
+	string ellFName;
+	RotatedRect minEllipse;
+	Mat output;
+	output=Mat::zeros(img.size(),CV_8UC3);
+	output.setTo(fgMark,segmented);
+	minEllipse = getEllipseFit(output);
+
+	// direction variable: 1 = up, 2 = down, 3 = left, 4 = right
+	if (direction == 1)
+		minEllipse.angle = minEllipse.angle>90 ? 360-minEllipse.angle : 180-minEllipse.angle;
+	else 
+	{
+		if (direction == 2)
+			minEllipse.angle = minEllipse.angle>90 ? 180-minEllipse.angle : 360-minEllipse.angle;
+		else
+		{
+			if (direction == 3)
+				minEllipse.angle = 360-minEllipse.angle;
+			else
+				minEllipse.angle = 180-minEllipse.angle;
+		}
+	}
+	// Output all data
+	// Original Image
+	outFName = file.substr(0,file.find_last_of("."))+"/Ref/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
+	imwrite(outFName,img);
+	// Segmentation Mask
+	outFName = file.substr(0,file.find_last_of("."))+"/Seg/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
+	imwrite(outFName,output);
+	// Ellipse fit
+	ellFName = file.substr(0,file.find_last_of("."))+"/Ell/"+file.substr(0,file.find_last_of("."))+format("_%d.txt",currentFrame);
+	ellipseFile.open(ellFName.c_str());
+	ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
+	ellipseFile.close();
+	// Saving output...
+	cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
+}
+
 int main(int argc, const char** argv)
 {
 	CommandLineParser parser(argc, argv, keys);
@@ -260,8 +302,6 @@ int main(int argc, const char** argv)
 	int numberFrames = parser.get<int>("nf");
 	squareSize = parser.get<int>("ps");
 	int keyPressed;
-	bool isTraining=true;
-	ofstream ellipseFile;
 	srand(time(NULL));
 
 	cap.open(file.c_str());
@@ -298,9 +338,6 @@ int main(int argc, const char** argv)
 	system( ("mkdir \"" + refFolder + "\"").c_str());
 	system( ("mkdir \"" + ellFolder + "\"").c_str());
 
-	string outFName;
-	string ellFName;
-
 	keyPressed=waitKey();
 	
 	Mat channel[3];
@@ -331,84 +368,28 @@ int main(int argc, const char** argv)
 				break;
 			case UPKEY: // Up arrow key
 				calcWatershed(markers,img,segmented,fgMark,bgMark);
-				// Output all data
-				outFName = file.substr(0,file.find_last_of("."))+"/Ref/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,img);
-				output=Mat::zeros(img.size(),CV_8UC3);
-				output.setTo(fgMark,segmented);
-				minEllipse = getEllipseFit(output);
-				minEllipse.angle = minEllipse.angle>90 ? 360-minEllipse.angle : 180-minEllipse.angle;
-				outFName = file.substr(0,file.find_last_of("."))+"/Seg/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,output);
-				ellFName = file.substr(0,file.find_last_of("."))+"/Ell/"+file.substr(0,file.find_last_of("."))+format("_%d.txt",currentFrame);
-				ellipseFile.open(ellFName.c_str());
-				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
-				ellipseFile.close();
-				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-
+				writeEllfitData(file, 1, currentFrame, segmented, framenum);
 				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
 				framenum++;
 				keyPressed=waitKey();
 				break;
 			case DOWNKEY: // Down arrow key
 				calcWatershed(markers,img,segmented,fgMark,bgMark);
-				// Output all data
-				outFName = file.substr(0,file.find_last_of("."))+"/Ref/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,img);
-				output=Mat::zeros(img.size(),CV_8UC3);
-				output.setTo(fgMark,segmented);
-				minEllipse = getEllipseFit(output);
-				minEllipse.angle = minEllipse.angle>90 ? 180-minEllipse.angle : 360-minEllipse.angle;
-				outFName = file.substr(0,file.find_last_of("."))+"/Seg/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,output);
-				ellFName = file.substr(0,file.find_last_of("."))+"/Ell/"+file.substr(0,file.find_last_of("."))+format("_%d.txt",currentFrame);
-				ellipseFile.open(ellFName.c_str());
-				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
-				ellipseFile.close();
-				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-
-				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
-				framenum++;
-				keyPressed=waitKey();
-				break;
-			case RIGHTKEY: // Right arrow key
-				calcWatershed(markers,img,segmented,fgMark,bgMark);
-				// Output all data
-				outFName = file.substr(0,file.find_last_of("."))+"/Ref/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,img);
-				output=Mat::zeros(img.size(),CV_8UC3);
-				output.setTo(fgMark,segmented);
-				minEllipse = getEllipseFit(output);
-				minEllipse.angle = 180-minEllipse.angle;
-				outFName = file.substr(0,file.find_last_of("."))+"/Seg/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,output);
-				ellFName = file.substr(0,file.find_last_of("."))+"/Ell/"+file.substr(0,file.find_last_of("."))+format("_%d.txt",currentFrame);
-				ellipseFile.open(ellFName.c_str());
-				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
-				ellipseFile.close();
-				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-
+				writeEllfitData(file, 2, currentFrame, segmented, framenum);
 				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
 				framenum++;
 				keyPressed=waitKey();
 				break;
 			case LEFTKEY: // Left arrow key
 				calcWatershed(markers,img,segmented,fgMark,bgMark);
-				// Output all data
-				outFName = file.substr(0,file.find_last_of("."))+"/Ref/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,img);
-				output=Mat::zeros(img.size(),CV_8UC3);
-				output.setTo(fgMark,segmented);
-				minEllipse = getEllipseFit(output);
-				minEllipse.angle = 360-minEllipse.angle;
-				outFName = file.substr(0,file.find_last_of("."))+"/Seg/"+file.substr(0,file.find_last_of("."))+format("_%d.png",currentFrame);
-				imwrite(outFName,output);
-				ellFName = file.substr(0,file.find_last_of("."))+"/Ell/"+file.substr(0,file.find_last_of("."))+format("_%d.txt",currentFrame);
-				ellipseFile.open(ellFName.c_str());
-				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
-				ellipseFile.close();
-				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-
+				writeEllfitData(file, 3, currentFrame, segmented, framenum);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
+				framenum++;
+				keyPressed=waitKey();
+				break;
+			case RIGHTKEY: // Right arrow key
+				calcWatershed(markers,img,segmented,fgMark,bgMark);
+				writeEllfitData(file, 4, currentFrame, segmented, framenum);
 				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
 				framenum++;
 				keyPressed=waitKey();
