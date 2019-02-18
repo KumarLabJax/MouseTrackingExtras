@@ -23,10 +23,11 @@
 using namespace std;
 using namespace cv;
 
-int pos=0, neg=0, squareSize=3;
+int squareSize=3;
 int bgMark=255, fgMark=127;
 Mat img, imgPlot, markers;
 bool lbutton=false, rbutton=false;
+VideoCapture cap;
 
 const char* keys = 
 {
@@ -234,6 +235,22 @@ RotatedRect getEllipseFit(Mat src)
 	return RotatedRect(Point2f(0,0), Size2f(1,1), 30);
 }
 
+void seekNewFrame(int &currentFrame, bool randomizedEnabled, int minFrameNum, int maxFrameNum)
+{
+	// Seek to random frame within the video
+	if (randomizedEnabled)
+		currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
+	else
+		currentFrame++;
+	cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
+	cap >> img;
+	if (img.empty())
+		exit(-1);
+	img.copyTo(imgPlot);
+	imshow("Frame",imgPlot);
+	markers.setTo(0);
+}
+
 int main(int argc, const char** argv)
 {
 	CommandLineParser parser(argc, argv, keys);
@@ -244,7 +261,6 @@ int main(int argc, const char** argv)
 	squareSize = parser.get<int>("ps");
 	int keyPressed;
 	bool isTraining=true;
-	VideoCapture cap;
 	ofstream ellipseFile;
 	srand(time(NULL));
 
@@ -302,17 +318,7 @@ int main(int argc, const char** argv)
 		{
 			case 'n': // "n" New frame without saving
 				cout << "Frame Skipped: " << currentFrame << "\n";
-				// Seek to random frame within the video
-				if (randomizedEnabled)
-					currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
-				else
-					currentFrame++;
-				cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
-				cap >> img;
-				if (img.empty())
-					return -1;
-				img.copyTo(imgPlot);
-				imshow("Frame",imgPlot);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
 
 				markers.setTo(0);
 				keyPressed=waitKey();
@@ -339,20 +345,9 @@ int main(int argc, const char** argv)
 				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
 				ellipseFile.close();
 				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-				// Seek to random frame within the video
-				if (randomizedEnabled)
-					currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
-				else
-					currentFrame++;
-				cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
-				cap >> img;
-				if (img.empty())
-					return -1;
-				framenum++;
-				img.copyTo(imgPlot);
-				imshow("Frame",imgPlot);
 
-				markers.setTo(0);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
+				framenum++;
 				keyPressed=waitKey();
 				break;
 			case DOWNKEY: // Down arrow key
@@ -371,20 +366,9 @@ int main(int argc, const char** argv)
 				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
 				ellipseFile.close();
 				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-				// Seek to random frame within the video
-				if (randomizedEnabled)
-					currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
-				else
-					currentFrame++;
-				cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
-				cap >> img;
-				if (img.empty())
-					return -1;
-				framenum++;
-				img.copyTo(imgPlot);
-				imshow("Frame",imgPlot);
 
-				markers.setTo(0);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
+				framenum++;
 				keyPressed=waitKey();
 				break;
 			case RIGHTKEY: // Right arrow key
@@ -403,20 +387,9 @@ int main(int argc, const char** argv)
 				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
 				ellipseFile.close();
 				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-				// Seek to random frame within the video
-				if (randomizedEnabled)
-					currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
-				else
-					currentFrame++;
-				cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
-				cap >> img;
-				if (img.empty())
-					return -1;
-				framenum++;
-				img.copyTo(imgPlot);
-				imshow("Frame",imgPlot);
 
-				markers.setTo(0);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
+				framenum++;
 				keyPressed=waitKey();
 				break;
 			case LEFTKEY: // Left arrow key
@@ -435,20 +408,9 @@ int main(int argc, const char** argv)
 				ellipseFile << minEllipse.center.x << "\t" << minEllipse.center.y << "\t" << minEllipse.size.width << "\t" << minEllipse.size.height << "\t" << minEllipse.angle << endl;
 				ellipseFile.close();
 				cout << "Frame Num: " << framenum << " , Frame Saved: " << currentFrame << " Angle: " << minEllipse.angle << "\n";
-				// Seek to random frame within the video
-				if (randomizedEnabled)
-					currentFrame = rand()%(maxFrameNum-minFrameNum + 1) + minFrameNum;
-				else
-					currentFrame++;
-				cap.set(CV_CAP_PROP_POS_FRAMES,currentFrame);
-				cap >> img;
-				if (img.empty())
-					return -1;
-				img.copyTo(imgPlot);
-				imshow("Frame",imgPlot);
-				framenum++;
 
-				markers.setTo(0);
+				seekNewFrame(currentFrame, randomizedEnabled, minFrameNum, maxFrameNum);
+				framenum++;
 				keyPressed=waitKey();
 				break;
 			case 'r':
