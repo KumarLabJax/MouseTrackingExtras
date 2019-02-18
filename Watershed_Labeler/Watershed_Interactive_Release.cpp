@@ -136,8 +136,8 @@ void calcWatershed(Mat markers, Mat img, Mat &result, int fg, int bg)
 
 	// Copy image to not modify original
 	Mat segmented;
-	segmented.create(img.size(),CV_8UC1);
-	img.convertTo(segmented,CV_8UC1);
+	segmented.create(img.size(),CV_8UC3);
+	img.convertTo(segmented,CV_8UC3);
 
 	watershed(segmented,markers2);
 
